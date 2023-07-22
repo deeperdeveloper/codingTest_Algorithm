@@ -1,6 +1,7 @@
 package GreedyAlgorithm;
 
 import java.util.ArrayList;
+import java.util.PriorityQueue;
 import java.util.Scanner;
 
 /**
@@ -8,20 +9,38 @@ import java.util.Scanner;
  */
 class Main_5 {
 
-    public void solution(int startVertex ,int n, int m, ArrayList<ArrayList<Edge>> arrList) {
-        //처음 시작점에서 가장 작은 Edge 선택
+    static int n,m;
+    static ArrayList<ArrayList<Edge>> arrList;
+    static int[] dis;
 
-        //기존 저장되어 있던 dis[] 배열에 저장
+    public void solution(int startVertex) {
+        PriorityQueue<Edge> pq = new PriorityQueue<>();
+        pq.offer(new Edge(startVertex, 0));
+        dis[startVertex] = 0;
 
-        //
+        while (!pq.isEmpty()) {
+            Edge cur = pq.poll();
+            int nowVertex = cur.vertex;
+            int nowCost = cur.cost;
+            if(nowCost > dis[nowVertex]) continue;
+            for(Edge e : arrList.get(nowVertex)) {
+                if (dis[e.vertex] > nowCost + e.cost) {
+                    dis[e.vertex] = nowCost + e.cost;
+                    pq.offer(new Edge(e.vertex, dis[e.vertex]));
+                }
+            }
+        }
     }
 
     public static void main(String[] args) {
         Main_5 main = new Main_5();
         Scanner sc = new Scanner(System.in);
-        int n = sc.nextInt(); //정점 수
-        int m = sc.nextInt(); //간선 수
-        ArrayList<ArrayList<Edge>> arrList = new ArrayList<>();
+        n = sc.nextInt(); //정점 수
+        m = sc.nextInt(); //간선 수
+        dis = new int[n+1];
+        for(int i=0; i<=n; i++) dis[i] = Integer.MAX_VALUE;
+
+        arrList = new ArrayList<>();
         for(int i=0; i<=n; i++) arrList.add(new ArrayList<>());
         for(int j=0; j<m; j++) {
             int s = sc.nextInt();
@@ -29,17 +48,26 @@ class Main_5 {
             int cost = sc.nextInt();
             arrList.get(s).add(new Edge(vertex, cost));
         }
-        main.solution(1, n, m, arrList);
+        main.solution(1);
+        for(int k=2; k<=n; k++) {
+            if(dis[k] != Integer.MAX_VALUE) System.out.println(k + " : " + dis[k]);
+            else System.out.println(k + " : " + "impossible");
+        }
     }
 }
 
-class Edge {
+class Edge implements Comparable<Edge>{
     int vertex;
     int cost;
 
     Edge(int vertex, int cost) {
         this.vertex = vertex;
         this.cost = cost;
+    }
+
+    @Override
+    public int compareTo(Edge e) {
+        return this.cost - e.cost;
     }
 }
 
@@ -50,10 +78,16 @@ class Edge {
  *    - 시작점에서 아래의 과정을 거쳐 각 정점까지의 최단거리를 구하자.
  *      1) 시작점에서 바로 이어지는 꼭지점에 대해 거리를 저장
  *          1)-1. 1)에서 저장한 거리 값들 중, 가장 작은 거리값인 꼭지점 a에 대해 다음 과정 진행
- *      2) 1)에서 구한 꼭짓점 a에서, 다음 꼭짓점까지의 거리 중 가장 작은 거리를 가지는 꼭짓점을 선별 (b라고 하자)
- *      3) 시작점과 꼭짓점 b까지의 거리는 아래의 식으로 구해진다.
- *          Math.min(시작점 ~ a까지 거리 + b ~ a까지 거리, 1)과정에서 저장한 거리값(시작점 ~ b까지 거리))
- *      4) 꼭짓점 b에서 2) ~ 3) 과정을 반복하여 완성
+ *          ** 정확히는, 시작점 ~ (아직 방문 안 한) 꼭짓점 거리 중, 가장 작은 거리값인 꼭짓점 a를 선택. 방문 처리
+ *
+ *      2) 1)에서 구한 꼭짓점 a에 대해, "시작점" ~ "a와 인접한 꼭짓점"까지의 거리를 갱신
+ *
+ *      3) 2)의 거리는, 시작점과 꼭짓점 b까지의 거리는 아래의 식으로 구해진다.
+ *          Math.min(시작점 ~ a까지 최단거리값(=dist[a]) + a~b까지 거리, 1)과정에서 저장한 거리값(시작점 ~ b까지 거리))
+ *
+ *          3)-1. 이제, 1) 2) 과정에서, 아직 방문하지 않은 꼭짓점(c) 중, a~ c까지 거리가 가장 작은 c를 선택. 방문 처리
+ *
+ *      4) 꼭짓점 c에 대해 2) ~ 3) 과정을 반복하여 완성
  *
  *
  *    1-1. 증명
@@ -67,6 +101,7 @@ class Edge {
  *                   ** dist[x]는, 다익스트라 알고리즘에 의해 구해진, 시작점에서 x까지의 거리이다.
  *          3) 이 때, dist[b] > dist[v] 여야 한다. 그렇지 않으면, b는 A에 속하기 때문이다.
  *          4) 그런데 시작점에서 b까지 가는 경로도 최단 경로여야 하므로 (전체 경로가 최단 경로이니까), dist[b] < dist[v]가 반드시 성립해야 한다.
+ *              ** b에서 다익스트라 알고리즘을 적용하게 되면, 그렇게 되어야만 한다.
  *
  *          3)과 4)가 모순이므로, 귀류법에 의해 증명이 된다.
  *
